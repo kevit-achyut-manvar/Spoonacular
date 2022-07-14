@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using SpoonacularAPI.Data;
-using SpoonacularAPI.Dtos;
 using SpoonacularAPI.Models;
 
 namespace SpoonacularAPI.Controllers
@@ -19,24 +18,28 @@ namespace SpoonacularAPI.Controllers
         private readonly DataContext _context;
         string baseAddress = "https://api.spoonacular.com/recipes/";
         string apiKey = "?apiKey=13ff94a3949d442ba79606af5aa5dc33";
+        OffsetValue Burger = new OffsetValue { Offset = 0 };
+        OffsetValue Pizza = new OffsetValue { Offset = 25 };
+
         public RecipesController(DataContext context)
         {
             _context = context;
         }
 
-        // Fetches and stores 50 pizza and 50 pasta recipes from Spoonacular API
+        // Fetches and stores 50 pizza and pasta recipes from Spoonacular API
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [HttpGet("FetchDefaultRecipe")]
-        public async Task<ActionResult<List<SearchRecipe>>> FetchRecipes()
+        [HttpGet("FetchRecipe")]
+        public async Task<ActionResult<List<RecipeSummary>>> FetchRecipes()
         {
+            var thing = new RecipeSummary();
+
+            // If database is empty, store 50 recipes of pizza and pasta
             if (!_context.RecipeSummaries.Any())
             {
-                var queryParam = "&number=50&query=Pizza";
-                var data = new Wrapper<List<SearchRecipe>>();
-                var moreData = new RecipeSummary();
-
-                // Call for 50 Pizza Recipe
+                #region Call for Default Pizza Recipe
+                // Call for 25 Pizza Recipe
+                var queryParam = "&number=5&query=Pizza&addRecipeInformation=true";
                 using (var client = new HttpClient())
                 {
                     HttpResponseMessage getData = await client.GetAsync(baseAddress + "complexSearch" + apiKey + queryParam);
@@ -44,32 +47,28 @@ namespace SpoonacularAPI.Controllers
                     if (getData.IsSuccessStatusCode)
                     {
                         string results = getData.Content.ReadAsStringAsync().Result;
-                        data = JsonConvert.DeserializeObject<Wrapper<List<SearchRecipe>>>(results);
+                        var data = RecipeInformation.FromJson(results);
 
                         foreach (var item in data.Results)
                         {
-                            HttpResponseMessage getMoreData = await client.GetAsync(baseAddress + item.Id + "/summary" + apiKey);
+                            var Cuisines = String.Join(", ", item.Cuisines);
+                            var DishTypes = String.Join(", ", item.DishTypes);
+                            Mapping(thing, item, Cuisines, DishTypes);
 
-                            if (getMoreData.IsSuccessStatusCode)
-                            {
-                                string moreResults = getMoreData.Content.ReadAsStringAsync().Result;
-                                moreData = JsonConvert.DeserializeObject<RecipeSummary>(moreResults);
-
-                                _context.RecipeSummaries.Add(moreData);
-                                await _context.SaveChangesAsync();
-                            }
-                            _context.SearchRecipes.Add(item);
+                            _context.RecipeSummaries.Add(thing);
                             await _context.SaveChangesAsync();
                         }
                     }
                     else
                     {
                         return StatusCode(StatusCodes.Status500InternalServerError, "Please try again after some time.");
-                    } 
-                }
+                    }
+                } 
+                #endregion
 
-                // Call for 50 Pasta Recipe
-                var queryParam2 = "&number=50&query=Pasta";
+                #region Call for Default Pasta Recipe
+                // Call for 25 Pasta Recipe
+                var queryParam2 = "&number=5&query=Pasta&addRecipeInformation=true";
                 using (var client = new HttpClient())
                 {
                     HttpResponseMessage getData = await client.GetAsync(baseAddress + "complexSearch" + apiKey + queryParam2);
@@ -77,21 +76,15 @@ namespace SpoonacularAPI.Controllers
                     if (getData.IsSuccessStatusCode)
                     {
                         string results = getData.Content.ReadAsStringAsync().Result;
-                        data = JsonConvert.DeserializeObject<Wrapper<List<SearchRecipe>>>(results);
+                        var data = RecipeInformation.FromJson(results);
 
                         foreach (var item in data.Results)
                         {
-                            HttpResponseMessage getMoreData = await client.GetAsync(baseAddress + item.Id + "/summary" + apiKey);
+                            var Cuisines = String.Join(", ", item.Cuisines);
+                            var DishTypes = String.Join(", ", item.DishTypes);
+                            Mapping(thing, item, Cuisines, DishTypes);
 
-                            if (getMoreData.IsSuccessStatusCode)
-                            {
-                                string moreResults = getMoreData.Content.ReadAsStringAsync().Result;
-                                moreData = JsonConvert.DeserializeObject<RecipeSummary>(moreResults);
-
-                                _context.RecipeSummaries.Add(moreData);
-                                await _context.SaveChangesAsync();
-                            }
-                            _context.SearchRecipes.Add(item);
+                            _context.RecipeSummaries.Add(thing);
                             await _context.SaveChangesAsync();
                         }
                         return NoContent();
@@ -100,143 +93,150 @@ namespace SpoonacularAPI.Controllers
                     {
                         return StatusCode(StatusCodes.Status500InternalServerError, "Please try again after some time.");
                     }
-                }
+                } 
+                #endregion
             }
+
+            // If database is not empty, store 20 recipes of burger and pizza
             else
             {
-                return BadRequest("Default 50 recipe already present. Use other API.");
-            }
-        }
-
-        // Fetches and stores recipes of specific cuisines
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [HttpGet("FetchRecipeByCuisine")]
-        public async Task<ActionResult<CuisineSummary>> FetchRecipeByCuisine(string Cuisine)
-        {
-            if (!_context.CuisineRecipes.Where(x => x.Cuisine == Cuisine).Any())
-            {
-                var queryParam = "&number=1&tags=" + Cuisine;
+                #region Call For Daily Pizza Recipe
+                // Call for 10 Pizza Recipe
+                var queryParam = "&number=1&query=Pizza&addRecipeInformation=true&offset=";
                 using (var client = new HttpClient())
                 {
-                    HttpResponseMessage getData = await client.GetAsync(baseAddress + "random" + apiKey + queryParam);
+                    HttpResponseMessage getData = await client.GetAsync(baseAddress + "complexSearch" + apiKey + queryParam + Pizza.Offset);
 
                     if (getData.IsSuccessStatusCode)
                     {
                         string results = getData.Content.ReadAsStringAsync().Result;
-                        var data = RandomRecipeInformation.FromJson(results);
-                        var temp = data.Recipes.First();
+                        var data = RecipeInformation.FromJson(results);
 
-                        HttpResponseMessage getMoreData = await client.GetAsync(baseAddress + temp.Id + "/summary" + apiKey);
-
-                        if (getMoreData.IsSuccessStatusCode)
+                        foreach (var item in data.Results)
                         {
-                            string moreResults = getMoreData.Content.ReadAsStringAsync().Result;
-                            var moreData = JsonConvert.DeserializeObject<CuisineSummary>(moreResults);
+                            var Cuisines = String.Join(", ", item.Cuisines);
+                            var DishTypes = String.Join(", ", item.DishTypes);
+                            Mapping(thing, item, Cuisines, DishTypes);
 
-                            moreData.Cuisine = Cuisine;
-
-                            _context.CuisineRecipes.Add(moreData);
+                            _context.RecipeSummaries.Add(thing);
                             await _context.SaveChangesAsync();
+                        }
+                        Pizza.Offset += 10;
+                    }
+                    else
+                    {
+                        return StatusCode(StatusCodes.Status500InternalServerError, "Please try again after some time.");
+                    }
+                }
+                #endregion
 
-                            return Ok(await _context.CuisineRecipes.FirstAsync(x => x.Id == moreData.Id));
-                        }
-                        else
+                #region Call for Daily Burger Recipe
+                // Call for 10 Burger Recipe
+                var queryParam2 = "&number=1&query=Burger&addRecipeInformation=true&offset=";
+                using (var client = new HttpClient())
+                {
+                    HttpResponseMessage getData = await client.GetAsync(baseAddress + "complexSearch" + apiKey + queryParam2 + Burger.Offset);
+
+                    if (getData.IsSuccessStatusCode)
+                    {
+                        string results = getData.Content.ReadAsStringAsync().Result;
+                        var data = RecipeInformation.FromJson(results);
+
+                        foreach (var item in data.Results)
                         {
-                            return StatusCode(StatusCodes.Status500InternalServerError, "Please try again after some time.");
+                            var Cuisines = String.Join(", ", item.Cuisines);
+                            var DishTypes = String.Join(", ", item.DishTypes);
+                            Mapping(thing, item, Cuisines, DishTypes);
+
+                            _context.RecipeSummaries.Add(thing);
+                            await _context.SaveChangesAsync();
                         }
+                        Burger.Offset += 10;
+                        return NoContent();
                     }
                     else
                     {
                         return StatusCode(StatusCodes.Status500InternalServerError, "Please try again after some time.");
                     }
                 } 
-            }
-            else
-            {
-                var data = await _context.CuisineRecipes.Where(x => x.Cuisine == Cuisine).FirstAsync();
-                return Ok(data);
+                #endregion
             }
         }
 
-        [HttpGet("FetchDaily")]
-        public async Task<ActionResult<List<SearchRecipe>>> FetchRecipesDaily()
+        // Fetches and stores recipes of specific cuisines
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [HttpGet("GetRecipeByCuisine")]
+        public async Task<ActionResult<RecipeSummary>> FetchRecipeByCuisine(string Cuisine)
         {
-            var queryParam = "&number=20&query=burger";
-            var data = new Wrapper<List<SearchRecipe>>();
-            var moreData = new RecipeSummary();
+            var temp = await _context.RecipeSummaries.Where(x => x.Cuisines.Contains(Cuisine)).ToListAsync();
+            //if (!temp.Any())
+            //{
+            //    var queryParam = "&number=1&tags=" + Cuisine.ToLower();
+            //    using (var client = new HttpClient())
+            //    {
+            //        HttpResponseMessage getData = await client.GetAsync(baseAddress + "random" + apiKey + queryParam);
 
-            // Call for 20 Burger Recipe
-            using (var client = new HttpClient())
-            {
-                HttpResponseMessage getData = await client.GetAsync(baseAddress + "complexSearch" + apiKey + queryParam);
+            //        if (getData.IsSuccessStatusCode)
+            //        {
+            //            string results = getData.Content.ReadAsStringAsync().Result;
+            //            var data = JsonConvert.DeserializeObject<RandomRecipeInformation>(results);
+            //            var temp2 = data.RecipeInformations.First();
 
-                if (getData.IsSuccessStatusCode)
-                {
-                    string results = getData.Content.ReadAsStringAsync().Result;
-                    data = JsonConvert.DeserializeObject<Wrapper<List<SearchRecipe>>>(results);
+            //            HttpResponseMessage getMoreData = await client.GetAsync(baseAddress + temp2.Id + "/summary" + apiKey);
 
-                    foreach (var item in data.Results)
-                    {
-                        HttpResponseMessage getMoreData = await client.GetAsync(baseAddress + item.Id + "/summary" + apiKey);
+            //            if (getMoreData.IsSuccessStatusCode)
+            //            {
+            //                string moreResults = getMoreData.Content.ReadAsStringAsync().Result;
+            //                var moreData = JsonConvert.DeserializeObject<RecipeSummary>(moreResults);
 
-                        if (getMoreData.IsSuccessStatusCode)
-                        {
-                            string moreResults = getMoreData.Content.ReadAsStringAsync().Result;
-                            moreData = JsonConvert.DeserializeObject<RecipeSummary>(moreResults);
+            //                moreData.Cuisines = Cuisine;
 
-                            _context.RecipeSummaries.Add(moreData);
-                            await _context.SaveChangesAsync();
-                        }
-                        _context.SearchRecipes.Add(item);
-                        await _context.SaveChangesAsync();
-                    }
-                }
-                else
-                {
-                    return StatusCode(StatusCodes.Status500InternalServerError, "Please try again after some time.");
-                }
-            }
+            //                _context.RecipeSummaries.Add(moreData);
+            //                await _context.SaveChangesAsync();
 
-            var queryParam2 = "&number=20&query=pizza";
-            // Call for 20 Pizza Recipe
-            using (var client = new HttpClient())
-            {
-                HttpResponseMessage getData = await client.GetAsync(baseAddress + "complexSearch" + apiKey + queryParam2);
-
-                if (getData.IsSuccessStatusCode)
-                {
-                    string results = getData.Content.ReadAsStringAsync().Result;
-                    data = JsonConvert.DeserializeObject<Wrapper<List<SearchRecipe>>>(results);
-
-                    foreach (var item in data.Results)
-                    {
-                        HttpResponseMessage getMoreData = await client.GetAsync(baseAddress + item.Id + "/summary" + apiKey);
-
-                        if (getMoreData.IsSuccessStatusCode)
-                        {
-                            string moreResults = getMoreData.Content.ReadAsStringAsync().Result;
-                            moreData = JsonConvert.DeserializeObject<RecipeSummary>(moreResults);
-
-                            _context.RecipeSummaries.Add(moreData);
-                            await _context.SaveChangesAsync();
-                        }
-                        _context.SearchRecipes.Add(item);
-                        await _context.SaveChangesAsync();
-                    }
-                    return NoContent();
-                }
-                else
-                {
-                    return StatusCode(StatusCodes.Status500InternalServerError, "Please try again after some time.");
-                }
-            }
+            //                return Ok(await _context.RecipeSummaries.FirstAsync(x => x.Id == moreData.Id));
+            //            }
+            //            else
+            //            {
+            //                return StatusCode(StatusCodes.Status500InternalServerError, "Please try again after some time.");
+            //            }
+            //        }
+            //        else
+            //        {
+            //            return StatusCode(StatusCodes.Status500InternalServerError, "Please try again after some time.");
+            //        }
+            //    }
+            //}
+            //else
+            //{
+                var index = new Random().Next(temp.Count);
+                return Ok(temp[index]);
+            //}
         }
 
-        [HttpGet("RecipeFromDatabase")]
-        public async Task<ActionResult<List<RecipeSummary>>> GetAllRecipeSummary()
+        private static void Mapping(RecipeSummary thing, Result item, string cuisines, string dishTypes)
         {
-            return Ok(await _context.RecipeSummaries.ToListAsync());
+            thing.Id = (int) item.Id;
+            thing.Title = item.Title;
+            thing.Summary = item.Summary;
+            thing.Cuisines = cuisines;
+            thing.SourceUrl = item.SourceUrl;
+            thing.SpoonacularSourceUrl = item.SpoonacularSourceUrl;
+            thing.PricePerServing = Math.Round(item.PricePerServing/100, 2);
+            thing.Servings = (int) item.Servings;
+            thing.DairyFree = item.DairyFree;
+            thing.DishTypes = dishTypes;
+            thing.GlutenFree = item.GlutenFree;
+            thing.ReadyInMinutes = (int) item.ReadyInMinutes;
+            thing.Vegan = item.Vegan;
+            thing.Vegetarian = item.Vegetarian;
         }
     }
+
+    public class OffsetValue
+    {
+        public int Offset { get; set; }
+    }
+ 
 }

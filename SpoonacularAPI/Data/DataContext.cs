@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SpoonacularAPI.Dtos;
 using SpoonacularAPI.Models;
 
 namespace SpoonacularAPI.Data
@@ -11,8 +10,6 @@ namespace SpoonacularAPI.Data
 
         }
 
-        public DbSet<SearchRecipe> SearchRecipes { get; set; }
         public DbSet<RecipeSummary> RecipeSummaries { get; set; }
-        public DbSet<CuisineSummary> CuisineRecipes { get; set; }
     }
 }
