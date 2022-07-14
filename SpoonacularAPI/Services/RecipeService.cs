@@ -12,12 +12,11 @@ namespace SpoonacularAPI.Services
     {
         string baseAddress = "https://api.spoonacular.com/recipes/";
         string apiKey = "?apiKey=13ff94a3949d442ba79606af5aa5dc33";
-        OffsetValue Burger = new OffsetValue { Offset = 0 };
         OffsetValue Pizza = new OffsetValue { Offset = 25 };
+        OffsetValue Burger = new OffsetValue { Offset = 0 };
 
         private readonly DataContext _context;
         private readonly IMapper _mapper;
-        
         public RecipeService(DataContext context, IMapper mapper)
         {
             _context = context;
@@ -109,16 +108,19 @@ namespace SpoonacularAPI.Services
                         string results = getData.Content.ReadAsStringAsync().Result;
                         var data = RecipeInformation.FromJson(results);
 
-                        foreach (var item in data.Results)
+                        if (data.Results.Count > 0)
                         {
-                            var Cuisines = String.Join(", ", item.Cuisines);
-                            var DishTypes = String.Join(", ", item.DishTypes);
-                            Mapping(thing, item, Cuisines, DishTypes);
+                            foreach (var item in data.Results)
+                            {
+                                var Cuisines = String.Join(", ", item.Cuisines);
+                                var DishTypes = String.Join(", ", item.DishTypes);
+                                Mapping(thing, item, Cuisines, DishTypes);
 
-                            _context.RecipeSummaries.Add(thing);
-                            await _context.SaveChangesAsync();
+                                _context.RecipeSummaries.Add(thing);
+                                await _context.SaveChangesAsync();
+                            }
+                            Pizza.Offset += 10;
                         }
-                        Pizza.Offset += 10;
                     }
                     else
                     {
@@ -137,16 +139,23 @@ namespace SpoonacularAPI.Services
                         string results = getData.Content.ReadAsStringAsync().Result;
                         var data = RecipeInformation.FromJson(results);
 
-                        foreach (var item in data.Results)
+                        if (data.Results.Count > 0)
                         {
-                            var Cuisines = String.Join(", ", item.Cuisines);
-                            var DishTypes = String.Join(", ", item.DishTypes);
-                            Mapping(thing, item, Cuisines, DishTypes);
+                            foreach (var item in data.Results)
+                            {
+                                var Cuisines = String.Join(", ", item.Cuisines);
+                                var DishTypes = String.Join(", ", item.DishTypes);
+                                Mapping(thing, item, Cuisines, DishTypes);
 
-                            _context.RecipeSummaries.Add(thing);
-                            await _context.SaveChangesAsync();
+                                _context.RecipeSummaries.Add(thing);
+                                await _context.SaveChangesAsync();
+                            }
+                            Burger.Offset += 10; 
                         }
-                        Burger.Offset += 10;
+                        else
+                        {
+                            response.Message = "Recipes finished. All Pizza and Burger recipes are already fetched and stored.";
+                        }
                     }
                     else
                     {
@@ -164,6 +173,15 @@ namespace SpoonacularAPI.Services
         public async Task<Response<CuisineRecipeSummary>> GetRecipeByCuisine(string Cuisine)
         {
             var response = new Response<CuisineRecipeSummary>();
+            var cuisine = Cuisine.ToLower();
+
+            if(!(cuisine.Equals("indian") || cuisine.Equals("irish") || cuisine.Equals("french") || cuisine.Equals("thai")))
+            {
+                response.Success = false;
+                response.Message = "Bad Request. Cuisine can only be from 'Indian', 'French', 'Irish' or 'Thai'.";
+
+                return response;
+            }
 
             var temp = await _context.RecipeSummaries.Where(x => x.Cuisines.Contains(Cuisine)).ToListAsync();
             var temp2 = await _context.CuisineRecipeSummaries.Where(x => x.Cuisines.Contains(Cuisine)).ToListAsync();
@@ -171,7 +189,7 @@ namespace SpoonacularAPI.Services
             {
                 if (!temp2.Any())
                 {
-                    var queryParam = "&number=1&tags=" + Cuisine.ToLower();
+                    var queryParam = "&number=1&tags=" + cuisine;
                     using (var client = new HttpClient())
                     {
                         var thing = new CuisineRecipeSummary();

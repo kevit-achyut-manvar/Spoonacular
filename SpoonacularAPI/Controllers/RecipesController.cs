@@ -34,11 +34,12 @@ namespace SpoonacularAPI.Controllers
             if (!temp.Success)
                 return StatusCode(StatusCodes.Status500InternalServerError, temp);
 
-            return NoContent();
+            return Ok(temp);
         }
 
         // Fetches and stores recipes of specific cuisines
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [HttpGet("GetRecipeByCuisine")]
         public async Task<ActionResult<RecipeSummary>> FetchRecipeByCuisine(string Cuisine)
@@ -46,7 +47,12 @@ namespace SpoonacularAPI.Controllers
             var temp = await _recipeService.GetRecipeByCuisine(Cuisine);
 
             if (!temp.Success)
+            {
+                if (temp.Message.Contains("Bad Request"))
+                    return BadRequest(temp);
+
                 return StatusCode(StatusCodes.Status500InternalServerError, temp);
+            }    
 
             return Ok(temp);
         }
