@@ -11,5 +11,6 @@ namespace SpoonacularAPI.Data
         }
 
         public DbSet<RecipeSummary> RecipeSummaries { get; set; }
+        public DbSet<CuisineRecipeSummary> CuisineRecipeSummaries { get; set; }
     }
 }
