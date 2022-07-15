@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SpoonacularAPI.Data;
+using SpoonacularAPI.Services;
 
 namespace SpoonacularAPI
 {
@@ -13,7 +14,11 @@ namespace SpoonacularAPI
 
             builder.Services.AddControllers();
 
-            builder.Services.AddHostedService<MyBackgroundService>();
+            builder.Services.AddAutoMapper(typeof(Program));
+
+            builder.Services.AddScoped<IRecipeService, RecipeService>();
+
+            //builder.Services.AddHostedService<MyBackgroundService>();
 
             builder.Services.AddDbContext<DataContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
