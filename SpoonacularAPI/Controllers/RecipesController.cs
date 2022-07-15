@@ -24,17 +24,32 @@ namespace SpoonacularAPI.Controllers
         }
 
         // Fetches and stores 50 pizza and pasta recipes from Spoonacular API
+        [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [HttpGet("FetchRecipe")]
         public async Task<ActionResult<List<RecipeSummary>>> FetchRecipes()
         {
-            var temp = await _recipeService.FetchRecipe();
+            if(OffsetValue.BurgerOffset == 0 && OffsetValue.PizzaOffset == 0)
+            {
+                var temp = await _recipeService.FetchRecipe(OffsetValue.BurgerOffset, OffsetValue.PizzaOffset);
 
-            if (!temp.Success)
-                return StatusCode(StatusCodes.Status500InternalServerError, temp);
+                OffsetValue.PizzaOffset = 25;
+                OffsetValue.BurgerOffset = 0;
 
-            return Ok(temp);
+                if (!temp.Success)
+                    return StatusCode(StatusCodes.Status500InternalServerError, temp);
+
+                return Ok(temp);
+            }
+
+            var temp2 = await _recipeService.FetchRecipe(OffsetValue.BurgerOffset, OffsetValue.PizzaOffset);
+            OffsetValue.BurgerOffset += 10;
+            OffsetValue.PizzaOffset += 10;
+
+            if (!temp2.Success)
+                return StatusCode(StatusCodes.Status500InternalServerError, temp2);
+
+            return Ok(temp2);
         }
 
         // Fetches and stores recipes of specific cuisines
@@ -52,9 +67,15 @@ namespace SpoonacularAPI.Controllers
                     return BadRequest(temp);
 
                 return StatusCode(StatusCodes.Status500InternalServerError, temp);
-            }    
+            }
 
             return Ok(temp);
         }
+    }
+
+    public class OffsetValue
+    {
+        public static int BurgerOffset { get; set; } = 0;
+        public static int PizzaOffset { get; set; } = 0;
     }
 }

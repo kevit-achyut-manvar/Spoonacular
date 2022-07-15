@@ -2,12 +2,11 @@
 //
 // To parse this JSON data, add NuGet 'Newtonsoft.Json' then do:
 //
-//    using QuickType;
+//    using SpoonacularAPI.ViewModels;
 //
 //    var recipeInformation = RecipeInformation.FromJson(jsonString);
 using System;
 using System.Collections.Generic;
-
 using System.Globalization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
