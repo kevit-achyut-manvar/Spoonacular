@@ -24,7 +24,7 @@ namespace SpoonacularAPI.Services
         public async Task<Response<List<RecipeSummary>>> FetchRecipe(int burgerOffset, int pizzaOffset)
         {
             var response = new Response<List<RecipeSummary>>();
-            var thing = new RecipeSummary();
+            var returnItem = new RecipeSummary();
 
             // If database is empty, store 50 recipes of pizza and pasta
             if (!_context.RecipeSummaries.Any())
@@ -48,9 +48,9 @@ namespace SpoonacularAPI.Services
                             {
                                 var Cuisines = String.Join(", ", item.Cuisines);
                                 var DishTypes = String.Join(", ", item.DishTypes);
-                                Mapping(thing, item, Cuisines, DishTypes);
+                                Mapping(returnItem, item, Cuisines, DishTypes);
 
-                                _context.RecipeSummaries.Add(thing); 
+                                _context.RecipeSummaries.Add(returnItem); 
                                 await _context.SaveChangesAsync();
                             }
                         }
@@ -75,9 +75,9 @@ namespace SpoonacularAPI.Services
                             {
                                 var Cuisines = String.Join(", ", item.Cuisines);
                                 var DishTypes = String.Join(", ", item.DishTypes);
-                                Mapping(thing, item, Cuisines, DishTypes);
+                                Mapping(returnItem, item, Cuisines, DishTypes);
 
-                                _context.RecipeSummaries.Add(thing);
+                                _context.RecipeSummaries.Add(returnItem);
                                 await _context.SaveChangesAsync();
                             }
 
@@ -126,9 +126,9 @@ namespace SpoonacularAPI.Services
                                 {
                                     var Cuisines = String.Join(", ", item.Cuisines);
                                     var DishTypes = String.Join(", ", item.DishTypes);
-                                    Mapping(thing, item, Cuisines, DishTypes);
+                                    Mapping(returnItem, item, Cuisines, DishTypes);
 
-                                    _context.RecipeSummaries.Add(thing);
+                                    _context.RecipeSummaries.Add(returnItem);
                                     await _context.SaveChangesAsync();
                                 }
                             }
@@ -156,9 +156,9 @@ namespace SpoonacularAPI.Services
                                 {
                                     var Cuisines = String.Join(", ", item.Cuisines);
                                     var DishTypes = String.Join(", ", item.DishTypes);
-                                    Mapping(thing, item, Cuisines, DishTypes);
+                                    Mapping(returnItem, item, Cuisines, DishTypes);
 
-                                    _context.RecipeSummaries.Add(thing);
+                                    _context.RecipeSummaries.Add(returnItem);
                                     await _context.SaveChangesAsync();
                                 }
 
@@ -204,11 +204,11 @@ namespace SpoonacularAPI.Services
                 return response;
             }
 
-            var temp = await _context.RecipeSummaries.Where(x => x.Cuisines.Contains(Cuisine)).ToListAsync();
-            var temp2 = await _context.CuisineRecipeSummaries.Where(x => x.Cuisines.Contains(Cuisine)).ToListAsync();
-            if (!temp.Any())
+            var firstData = await _context.RecipeSummaries.Where(x => x.Cuisines.Contains(Cuisine)).ToListAsync();
+            var secondData = await _context.CuisineRecipeSummaries.Where(x => x.Cuisines.Contains(Cuisine)).ToListAsync();
+            if (!firstData.Any()) // Checks if mentioned cuisines recipe is available in First Table
             {
-                if (!temp2.Any())
+                if (!secondData.Any()) // Checks if mentioned cuisines recipe is available in Second Table
                 {
                     // Call for random recipe of mentioned cuisine
                     var queryParam = "&number=1&tags=" + cuisine;
@@ -216,7 +216,7 @@ namespace SpoonacularAPI.Services
                     {
                         using (var client = new HttpClient())
                         {
-                            var thing = new CuisineRecipeSummary();
+                            var returnItem = new CuisineRecipeSummary();
                             HttpResponseMessage getData = await client.GetAsync(baseAddress + "random" + apiKey + queryParam);
 
                             if (getData.IsSuccessStatusCode)
@@ -228,12 +228,12 @@ namespace SpoonacularAPI.Services
                                 var Cuisines = String.Join(", ", item.Cuisines);
                                 var DishTypes = String.Join(", ", item.DishTypes);
 
-                                Mapping(thing, item, Cuisines, DishTypes);
+                                Mapping(returnItem, item, Cuisines, DishTypes);
 
-                                _context.CuisineRecipeSummaries.Add(thing);
+                                _context.CuisineRecipeSummaries.Add(returnItem);
                                 await _context.SaveChangesAsync();
 
-                                response.Data = thing;
+                                response.Data = returnItem;
                             }
                             else
                             {
@@ -254,8 +254,8 @@ namespace SpoonacularAPI.Services
                 }
                 else
                 {
-                    var index = new Random().Next(temp2.Count);
-                    response.Data = temp2[index];
+                    var index = new Random().Next(secondData.Count);
+                    response.Data = secondData[index];
 
                     return response;
                 }
@@ -263,8 +263,8 @@ namespace SpoonacularAPI.Services
             }
             else
             {
-                var index = new Random().Next(temp.Count);
-                response.Data = _mapper.Map<CuisineRecipeSummary>(temp[index]);
+                var index = new Random().Next(firstData.Count);
+                response.Data = _mapper.Map<CuisineRecipeSummary>(firstData[index]);
 
                 return response;
             }

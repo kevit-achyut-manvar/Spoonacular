@@ -23,25 +23,25 @@ namespace SpoonacularAPI.Controllers
         {
             if(OffsetValue.BurgerOffset == 0 && OffsetValue.PizzaOffset == 0)
             {
-                var temp = await _recipeService.FetchRecipe(OffsetValue.BurgerOffset, OffsetValue.PizzaOffset);
+                var response = await _recipeService.FetchRecipe(OffsetValue.BurgerOffset, OffsetValue.PizzaOffset);
 
                 OffsetValue.PizzaOffset = 25;
                 OffsetValue.BurgerOffset = 0;
 
-                if (!temp.Success)
-                    return StatusCode(StatusCodes.Status500InternalServerError, temp);
+                if (!response.Success)
+                    return StatusCode(StatusCodes.Status500InternalServerError, response;
 
-                return Ok(temp);
+                return Ok(response);
             }
 
-            var temp2 = await _recipeService.FetchRecipe(OffsetValue.BurgerOffset, OffsetValue.PizzaOffset);
+            var alternateResponse = await _recipeService.FetchRecipe(OffsetValue.BurgerOffset, OffsetValue.PizzaOffset);
             OffsetValue.BurgerOffset += 10;
             OffsetValue.PizzaOffset += 10;
 
-            if (!temp2.Success)
-                return StatusCode(StatusCodes.Status500InternalServerError, temp2);
+            if (!alternateResponse.Success)
+                return StatusCode(StatusCodes.Status500InternalServerError, alternateResponse);
 
-            return Ok(temp2);
+            return Ok(alternateResponse);
         }
 
         // Fetches and stores recipes of specific cuisines
@@ -51,17 +51,17 @@ namespace SpoonacularAPI.Controllers
         [HttpGet("GetRecipeByCuisine")]
         public async Task<ActionResult<RecipeSummary>> FetchRecipeByCuisine(string Cuisine)
         {
-            var temp = await _recipeService.GetRecipeByCuisine(Cuisine);
+            var response = await _recipeService.GetRecipeByCuisine(Cuisine);
 
-            if (!temp.Success)
+            if (!response.Success)
             {
-                if (temp.Message.Contains("Bad Request"))
-                    return BadRequest(temp);
+                if (response.Message.Contains("Bad Request"))
+                    return BadRequest(response);
 
-                return StatusCode(StatusCodes.Status500InternalServerError, temp);
+                return StatusCode(StatusCodes.Status500InternalServerError, response);
             }
 
-            return Ok(temp);
+            return Ok(response);
         }
     }
 
