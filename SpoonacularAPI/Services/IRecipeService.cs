@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using SpoonacularAPI.Models;
+﻿using SpoonacularAPI.Models;
 using SpoonacularAPI.ViewModels;
 
 namespace SpoonacularAPI.Services

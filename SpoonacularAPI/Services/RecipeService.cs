@@ -1,9 +1,6 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using SpoonacularAPI.Controllers;
 using SpoonacularAPI.Data;
 using SpoonacularAPI.Models;
 using SpoonacularAPI.ViewModels;
@@ -53,7 +50,7 @@ namespace SpoonacularAPI.Services
                                 var DishTypes = String.Join(", ", item.DishTypes);
                                 Mapping(thing, item, Cuisines, DishTypes);
 
-                                _context.RecipeSummaries.Add(thing);
+                                _context.RecipeSummaries.Add(thing); 
                                 await _context.SaveChangesAsync();
                             }
                         }
@@ -273,11 +270,13 @@ namespace SpoonacularAPI.Services
             }
         }
 
+        // Check if cuisine is from one of the allowed cuisines
         private static bool CheckCuisine(string cuisine)
         {
             return cuisine.Equals("indian") || cuisine.Equals("irish") || cuisine.Equals("french") || cuisine.Equals("thai") || cuisine.Equals("italian");
         }
 
+        // Maps RecipeInformation (View Model) to RecipeSummary (Data Model)
         private static void Mapping(RecipeSummary thing, Result item, string cuisines, string dishTypes)
         {
             thing.Id = (int)item.Id;
@@ -296,6 +295,7 @@ namespace SpoonacularAPI.Services
             thing.Vegetarian = item.Vegetarian;
         }
 
+        // Maps RandomRecipeInfomation (View Model) to CuisineRecipeSummary (DataModel)
         private static void Mapping(CuisineRecipeSummary thing, Recipe item, string cuisines, string dishTypes)
         {
             thing.Id = (int)item.Id;
