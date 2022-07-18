@@ -53,18 +53,7 @@ namespace SpoonacularAPI.Services
 
                         if (getRecipeData.IsSuccessStatusCode)
                         {
-                            string results = getRecipeData.Content.ReadAsStringAsync().Result;
-                            var recipeData = RecipeInformation.FromJson(results);
-
-                            foreach (var recipe in recipeData.Results)
-                            {
-                                var Cuisines = String.Join(", ", recipe.Cuisines);
-                                var DishTypes = String.Join(", ", recipe.DishTypes);
-                                Mapping(recipeSummary, recipe, Cuisines, DishTypes);
-
-                                _context.RecipeSummaries.Add(recipeSummary);
-                                await _context.SaveChangesAsync();
-                            }
+                            await SaveRecipe(recipeSummary, getRecipeData);
                         }
                         else
                         {
@@ -80,18 +69,7 @@ namespace SpoonacularAPI.Services
 
                         if (getRecipeData.IsSuccessStatusCode)
                         {
-                            string results = getRecipeData.Content.ReadAsStringAsync().Result;
-                            var recipeData = RecipeInformation.FromJson(results);
-
-                            foreach (var recipe in recipeData.Results)
-                            {
-                                var Cuisines = String.Join(", ", recipe.Cuisines);
-                                var DishTypes = String.Join(", ", recipe.DishTypes);
-                                Mapping(recipeSummary, recipe, Cuisines, DishTypes);
-
-                                _context.RecipeSummaries.Add(recipeSummary);
-                                await _context.SaveChangesAsync();
-                            }
+                            await SaveRecipe(recipeSummary, getRecipeData);
 
                             response.Message = "50 Pizza and Burger recipe successfully stored.";
                         }
@@ -129,21 +107,7 @@ namespace SpoonacularAPI.Services
 
                         if (getRecipeData.IsSuccessStatusCode)
                         {
-                            string results = getRecipeData.Content.ReadAsStringAsync().Result;
-                            var recipeData = RecipeInformation.FromJson(results);
-
-                            if (recipeData.Results.Count > 0)
-                            {
-                                foreach (var recipe in recipeData.Results)
-                                {
-                                    var Cuisines = String.Join(", ", recipe.Cuisines);
-                                    var DishTypes = String.Join(", ", recipe.DishTypes);
-                                    Mapping(recipeSummary, recipe, Cuisines, DishTypes);
-
-                                    _context.RecipeSummaries.Add(recipeSummary);
-                                    await _context.SaveChangesAsync();
-                                }
-                            }
+                            await SaveRecipe(recipeSummary, getRecipeData);
                         }
                         else
                         {
@@ -293,6 +257,31 @@ namespace SpoonacularAPI.Services
         #endregion
 
         #region Private Methods
+        /// <summary>
+        ///     Saves recipe in database after deserializing recipe data obtained from source API
+        /// </summary>
+        /// <param name="recipeSummary"></param>
+        /// <param name="getRecipeData"></param>
+        /// <returns></returns>
+        private async Task SaveRecipe(RecipeSummary recipeSummary, HttpResponseMessage getRecipeData)
+        {
+            string results = getRecipeData.Content.ReadAsStringAsync().Result;
+            var recipeData = RecipeInformation.FromJson(results);
+
+            if (recipeData.Results.Count > 0)
+            {
+                foreach (var recipe in recipeData.Results)
+                {
+                    var Cuisines = String.Join(", ", recipe.Cuisines);
+                    var DishTypes = String.Join(", ", recipe.DishTypes);
+                    Mapping(recipeSummary, recipe, Cuisines, DishTypes);
+
+                    _context.RecipeSummaries.Add(recipeSummary);
+                    await _context.SaveChangesAsync();
+                }
+            }
+        }
+
         /// <summary>
         ///     Check if cuisine is from one of the allowed cuisines
         /// </summary>
