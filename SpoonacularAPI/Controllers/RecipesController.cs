@@ -13,9 +13,12 @@ namespace SpoonacularAPI.Controllers
         public RecipesController(IRecipeService recipeService)
         {
             _recipeService = recipeService;
-        }
+        } 
 
-        // Fetches and stores 50 pizza and pasta recipes from Spoonacular API
+        /// <summary>
+        ///     Fetches and stores 50 pizza and pasta recipes in database from Spoonacular API (Source API)
+        /// </summary>
+        /// <returns>Status Code with message. No data is returned.</returns>
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [HttpGet("FetchRecipe")]
@@ -29,7 +32,7 @@ namespace SpoonacularAPI.Controllers
                 OffsetValue.BurgerOffset = 0;
 
                 if (!response.Success)
-                    return StatusCode(StatusCodes.Status500InternalServerError, response;
+                    return StatusCode(StatusCodes.Status500InternalServerError, response);
 
                 return Ok(response);
             }
@@ -44,7 +47,11 @@ namespace SpoonacularAPI.Controllers
             return Ok(alternateResponse);
         }
 
-        // Fetches and stores recipes of specific cuisines
+        /// <summary>
+        ///     Gets recipe of given cuisine from database or fetches and stores a random recipe of given cuisine from source API
+        /// </summary>
+        /// <param name="Cuisine">"Cuisine" whose recipe is to be returned</param>
+        /// <returns>Recipe of given cuisine</returns>
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -65,6 +72,9 @@ namespace SpoonacularAPI.Controllers
         }
     }
 
+    /// <summary>
+    /// Provides offset value (recipes to be skipped)
+    /// </summary>
     public class OffsetValue
     {
         public static int BurgerOffset { get; set; } = 0;
