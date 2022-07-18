@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Quartz;
+using Quartz.Impl;
 using SpoonacularAPI.Data;
 using SpoonacularAPI.Services;
 
@@ -16,9 +18,21 @@ namespace SpoonacularAPI
 
             builder.Services.AddAutoMapper(typeof(Program));
 
-            builder.Services.AddScoped<IRecipeService, RecipeService>();
+            builder.Services.AddQuartz(q =>
+            {
+                q.UseMicrosoftDependencyInjectionJobFactory();
+                var jobKey = new JobKey("ApiJob");
+                q.AddJob<DailyApiJob>(opts => opts.WithIdentity(jobKey));
 
-            //builder.Services.AddHostedService<MyBackgroundService>();
+                q.AddTrigger(opts => opts
+                    .ForJob(jobKey)
+                    .StartNow()
+                    .WithSimpleSchedule(x => x.WithIntervalInHours(24).RepeatForever()));
+            });
+
+            builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+
+            builder.Services.AddScoped<IRecipeService, RecipeService>();
 
             builder.Services.AddDbContext<DataContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
