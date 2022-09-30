@@ -37,12 +37,8 @@ Then complete following steps:
         "DefaultConnection": "Data Source=<Database Server/Host Name>;Initial Catalog=<Database Name>;Integrated Security=True;"
     },
 ```
-- Add the migrations to your database by using following command in Visual Studio Developer Power Shell
+- Add the migrations to your database by using following command in Visual Studio Package Manager Console
 ```
-dotnet ef database update 20220714050631_RecipeSummary
+Update-Database
 ```
-```
-dotnet ef database update 20220714113915_CuisineRecipeSummary
-```
-
 Setup is complete. Now you can run the project (shortcut key F5).
